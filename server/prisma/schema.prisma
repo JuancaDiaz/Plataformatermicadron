@@ -1,0 +1,147 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelo de Usuarios del sistema
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      UserRole @default(OPERATOR)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  flights    Flight[]
+  evidence   Evidence[]
+  clients    Client[]    // Para administradores que gestionan clientes
+  fields     Field[]     // Para administradores que gestionan campos
+
+  @@map("users")
+}
+
+// Roles de usuario en el sistema
+enum UserRole {
+  ADMIN     // Gerencia - acceso completo
+  OPERATOR  // Trabajadores en campo
+  CLIENT    // Clientes (futuro)
+}
+
+// Modelo de Clientes
+model Client {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  phone       String?
+  address     String?
+  company     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  fields      Field[]
+  managedBy   User?    @relation(fields: [managerId], references: [id])
+  managerId   String?
+
+  @@map("clients")
+}
+
+// Modelo de Campos agrícolas
+model Field {
+  id          String   @id @default(cuid())
+  name        String
+  location    String
+  hectares    Float?
+  description String?
+  coordinates String?  // Para futura integración con mapas
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  client      Client   @relation(fields: [clientId], references: [id])
+  clientId    String
+  flights     Flight[]
+  managedBy   User?    @relation(fields: [managerId], references: [id])
+  managerId   String?
+
+  @@map("fields")
+}
+
+// Modelo de Vuelos de patrullaje
+model Flight {
+  id          String       @id @default(cuid())
+  startTime   DateTime
+  endTime     DateTime?
+  status      FlightStatus @default(ACTIVE)
+  weather     String?      // Condiciones climáticas
+  notes       String?      // Observaciones del operador
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relaciones
+  field       Field        @relation(fields: [fieldId], references: [id])
+  fieldId     String
+  operator    User         @relation(fields: [operatorId], references: [id])
+  operatorId  String
+  evidence    Evidence[]
+
+  @@map("flights")
+}
+
+// Estados de un vuelo
+enum FlightStatus {
+  ACTIVE      // Vuelo en curso
+  COMPLETED   // Vuelo finalizado
+  CANCELLED   // Vuelo cancelado
+  INTERRUPTED // Vuelo interrumpido
+}
+
+// Modelo de Evidencia (fotos, videos, texto)
+model Evidence {
+  id          String           @id @default(cuid())
+  type        EvidenceType
+  title       String
+  description String?
+  fileUrl     String?          // URL del archivo (imagen/video)
+  textContent String?          // Para evidencia de texto
+  priority    EvidencePriority @default(MEDIUM)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // Relaciones
+  flight      Flight           @relation(fields: [flightId], references: [id])
+  flightId    String
+  reportedBy  User             @relation(fields: [reportedById], references: [id])
+  reportedById String
+
+  @@map("evidence")
+}
+
+// Tipos de evidencia
+enum EvidenceType {
+  IMAGE       // Imagen térmica o normal
+  VIDEO       // Video de vigilancia
+  TEXT        // Reporte de texto
+  ALERT       // Alerta de intrusión
+}
+
+// Prioridad de la evidencia
+enum EvidencePriority {
+  LOW         // Observación normal
+  MEDIUM      // Situación de atención
+  HIGH        // Incidente importante
+  CRITICAL    // Emergencia
+} 
