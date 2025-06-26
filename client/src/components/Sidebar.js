@@ -1,14 +1,17 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { 
-  Shield, 
-  Home, 
-  Users, 
-  MapPin, 
-  Plane, 
-  FileText, 
-  Settings, 
+import {
+  Shield,
+  Home,
+  Map,
+  Camera,
+  FileText,
+  Bell,
+  BarChart2,
+  MessageCircle,
+  Globe,
+  Settings,
   LogOut,
   X
 } from 'lucide-react';
@@ -16,18 +19,17 @@ import {
 const Sidebar = ({ open, setOpen }) => {
   const { user, logout } = useAuth();
 
+  // Navegación para clientes
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
-    ...(user?.role === 'ADMIN' ? [
-      { name: 'Usuarios', href: '/users', icon: Users },
-      { name: 'Clientes', href: '/clients', icon: Users },
-      { name: 'Campos', href: '/fields', icon: MapPin },
-    ] : []),
-    { name: 'Vuelos', href: '/flights', icon: Plane },
-    { name: 'Evidencia', href: '/evidence', icon: FileText },
-    ...(user?.role === 'ADMIN' ? [
-      { name: 'Configuración', href: '/settings', icon: Settings },
-    ] : []),
+    { name: 'Mis Campos', href: '/fields', icon: Map },
+    { name: 'Vuelos', href: '/flights', icon: Camera },
+    { name: 'Evidencias', href: '/evidence', icon: FileText },
+    { name: 'Notificaciones', href: '/notifications', icon: Bell },
+    { name: 'Mapa', href: '/map', icon: Globe },
+    { name: 'Reportes', href: '/reports', icon: BarChart2 },
+    { name: 'Soporte', href: '/support', icon: MessageCircle },
+    { name: 'Configuración', href: '/settings', icon: Settings },
   ];
 
   return (
@@ -89,7 +91,7 @@ const Sidebar = ({ open, setOpen }) => {
                   {user?.firstName} {user?.lastName}
                 </p>
                 <p className="text-xs text-gray-500 capitalize">
-                  {user?.role?.toLowerCase()}
+                  Cliente
                 </p>
               </div>
               <button
@@ -163,7 +165,7 @@ const Sidebar = ({ open, setOpen }) => {
                   {user?.firstName} {user?.lastName}
                 </p>
                 <p className="text-xs text-gray-500 capitalize">
-                  {user?.role?.toLowerCase()}
+                  Cliente
                 </p>
               </div>
               <button

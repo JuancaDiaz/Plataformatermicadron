@@ -56,7 +56,7 @@ router.post('/login', [
       });
     }
 
-    // Generar token JWT
+    // Generar access token (7 días)
     const token = jwt.sign(
       { 
         userId: user.id,
@@ -64,8 +64,23 @@ router.post('/login', [
         role: user.role
       },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
+
+    // Generar refresh token (30 días)
+    const refreshToken = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    // Enviar refresh token en cookie httpOnly
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 días
+    });
 
     // Enviar respuesta sin la contraseña
     const { password: _, ...userWithoutPassword } = user;
@@ -187,6 +202,34 @@ router.post('/logout', (req, res) => {
   res.json({
     message: 'Sesión cerrada exitosamente'
   });
+});
+
+/**
+ * POST /api/auth/refresh
+ * Renovar access token usando refresh token
+ */
+router.post('/refresh', (req, res) => {
+  const refreshToken = req.cookies?.refreshToken;
+  if (!refreshToken) {
+    return res.status(401).json({ error: 'No refresh token' });
+  }
+  try {
+    const payload = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    // Emitir nuevo access token
+    const token = jwt.sign(
+      {
+        userId: payload.userId,
+        // Puedes agregar más datos si lo deseas
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    return res.json({ token });
+  } catch (err) {
+    // Token inválido o expirado
+    res.clearCookie('refreshToken');
+    return res.status(401).json({ error: 'Refresh token inválido o expirado' });
+  }
 });
 
 module.exports = router; 

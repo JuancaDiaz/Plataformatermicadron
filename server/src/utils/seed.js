@@ -35,6 +35,20 @@ async function main() {
       }
     });
 
+    // Crear usuario cliente
+    const clientPassword = await bcrypt.hash('cliente123', 12);
+    const clientUser = await prisma.user.upsert({
+      where: { email: 'cliente@agricola.cl' },
+      update: {},
+      create: {
+        email: 'cliente@agricola.cl',
+        password: clientPassword,
+        firstName: 'Roberto',
+        lastName: 'González',
+        role: 'CLIENT'
+      }
+    });
+
     // Crear cliente de ejemplo
     const client = await prisma.client.upsert({
       where: { email: 'cliente@agricola.cl' },
@@ -45,7 +59,12 @@ async function main() {
         phone: '+56 9 1234 5678',
         address: 'Camino Rural 123, Valle del Maipo',
         company: 'Agricola del Valle SPA',
-        managerId: admin.id
+        managedBy: {
+          connect: { id: admin.id }
+        },
+        user: {
+          connect: { id: clientUser.id }
+        }
       }
     });
 
@@ -64,8 +83,12 @@ async function main() {
         hectares: 150.5,
         description: 'Campo principal de cultivo de uvas para vino',
         coordinates: '-33.4489,-70.6693',
-        clientId: client.id,
-        managerId: admin.id
+        client: {
+          connect: { id: client.id }
+        },
+        managedBy: {
+          connect: { id: admin.id }
+        }
       }
     });
 
@@ -77,8 +100,12 @@ async function main() {
         status: 'COMPLETED',
         weather: 'Despejado, sin viento',
         notes: 'Patrullaje nocturno rutinario. Sin incidentes detectados.',
-        fieldId: field.id,
-        operatorId: operator.id
+        field: {
+          connect: { id: field.id }
+        },
+        operator: {
+          connect: { id: operator.id }
+        }
       }
     });
 
@@ -90,8 +117,12 @@ async function main() {
         description: 'Observaciones generales del vuelo',
         textContent: 'Durante el patrullaje se verificó la integridad del perímetro. No se detectaron intrusiones ni anomalías térmicas. Todas las instalaciones se encuentran en buen estado.',
         priority: 'LOW',
-        flightId: flight.id,
-        reportedById: operator.id
+        flight: {
+          connect: { id: flight.id }
+        },
+        reportedBy: {
+          connect: { id: operator.id }
+        }
       }
     });
 
@@ -99,6 +130,7 @@ async function main() {
     console.log('📊 Datos creados:');
     console.log(`   - Usuario Admin: ${admin.email} (admin123)`);
     console.log(`   - Usuario Operador: ${operator.email} (operador123)`);
+    console.log(`   - Usuario Cliente: ${clientUser.email} (cliente123)`);
     console.log(`   - Cliente: ${client.name}`);
     console.log(`   - Campo: ${field.name}`);
     console.log(`   - Vuelo: ${flight.id}`);
@@ -116,6 +148,4 @@ main()
   .catch((e) => {
     console.error(e);
     process.exit(1);
-  })
-  .finally(async () => {
- 
+  }); 

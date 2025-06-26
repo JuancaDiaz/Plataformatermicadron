@@ -23,10 +23,11 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relaciones
-  flights    Flight[]
-  evidence   Evidence[]
-  clients    Client[]    // Para administradores que gestionan clientes
-  fields     Field[]     // Para administradores que gestionan campos
+  flights         Flight[]
+  evidence        Evidence[]
+  managedClients  Client[]    @relation("managedClients") // Para administradores que gestionan clientes
+  clientProfile   Client?     @relation("clientUser")     // Para usuarios con rol CLIENT
+  fields          Field[]     // Para administradores que gestionan campos
 
   @@map("users")
 }
@@ -52,8 +53,10 @@ model Client {
 
   // Relaciones
   fields      Field[]
-  managedBy   User?    @relation(fields: [managerId], references: [id])
+  managedBy   User?    @relation(fields: [managerId], references: [id], name: "managedClients")
   managerId   String?
+  user        User?    @relation(fields: [userId], references: [id], name: "clientUser")
+  userId      String?  @unique
 
   @@map("clients")
 }
@@ -77,6 +80,7 @@ model Field {
   managedBy   User?    @relation(fields: [managerId], references: [id])
   managerId   String?
 
+  @@unique([name, clientId])
   @@map("fields")
 }
 

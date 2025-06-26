@@ -11,98 +11,73 @@ import {
   CheckCircle
 } from 'lucide-react';
 
+// Datos inventados para demo
+const fakeClients = [
+  { id: 'cliente1', name: 'AgroTrigal Ltda.' },
+  { id: 'cliente2', name: 'Viñas del Sur' },
+];
+const fakeFields = [
+  { id: 'campo1', name: 'Campo El Trigal', location: 'Rancagua', clientId: 'cliente1', lastFlight: '2024-06-23' },
+  { id: 'campo2', name: 'Fundo Santa Rosa', location: 'Curicó', clientId: 'cliente2', lastFlight: '2024-06-21' },
+];
+const fakeOperators = [
+  { id: 'op1', name: 'Juan Pérez', flights: 5 },
+  { id: 'op2', name: 'María González', flights: 3 },
+  { id: 'op3', name: 'Pedro Soto', flights: 2 },
+];
+const fakeFlights = [
+  { id: 'vuelo1', fieldId: 'campo1', operator: 'Juan Pérez', startTime: '2024-06-23T20:00:00', status: 'COMPLETED' },
+  { id: 'vuelo2', fieldId: 'campo1', operator: 'María González', startTime: '2024-06-22T21:00:00', status: 'ACTIVE' },
+  { id: 'vuelo3', fieldId: 'campo2', operator: 'Pedro Soto', startTime: '2024-06-21T19:00:00', status: 'COMPLETED' },
+];
+const fakeEvidence = [
+  { id: 'ev1', type: 'Foto', date: '2024-06-23', fieldId: 'campo1', description: 'Imagen térmica nocturna' },
+  { id: 'ev2', type: 'Video', date: '2024-06-21', fieldId: 'campo2', description: 'Video de patrullaje' },
+  { id: 'ev3', type: 'Foto', date: '2024-06-24', fieldId: 'campo1', description: 'Foto de patrullaje diurno' },
+];
+const fakeAlerts = [
+  { id: 'alert1', field: 'Campo El Trigal', date: '2024-06-23', type: 'Movimiento sospechoso', status: 'Abierta' },
+];
+
+// Simular vuelos por día para gráfica
+const flightsByDay = [
+  { day: 'Lun', count: 1 },
+  { day: 'Mar', count: 2 },
+  { day: 'Mié', count: 1 },
+  { day: 'Jue', count: 0 },
+  { day: 'Vie', count: 2 },
+  { day: 'Sáb', count: 1 },
+  { day: 'Dom', count: 1 },
+];
+
+// Simular distribución de evidencia
+const evidenceTypes = [
+  { type: 'Foto', count: 2 },
+  { type: 'Video', count: 1 },
+];
+
 const Dashboard = () => {
   const { user } = useAuth();
 
-  // Datos de ejemplo - en el futuro vendrán de la API
-  const stats = [
-    {
-      name: 'Vuelos Activos',
-      value: '3',
-      change: '+12%',
-      changeType: 'positive',
-      icon: Plane,
-      color: 'bg-blue-500'
-    },
-    {
-      name: 'Campos Monitoreados',
-      value: '8',
-      change: '+2',
-      changeType: 'positive',
-      icon: MapPin,
-      color: 'bg-green-500'
-    },
-    {
-      name: 'Evidencia Registrada',
-      value: '24',
-      change: '+8',
-      changeType: 'positive',
-      icon: FileText,
-      color: 'bg-purple-500'
-    },
-    {
-      name: 'Operadores Activos',
-      value: '5',
-      change: '0',
-      changeType: 'neutral',
-      icon: Users,
-      color: 'bg-orange-500'
-    }
+  // KPIs
+  const kpis = [
+    { label: 'Clientes', value: fakeClients.length },
+    { label: 'Campos', value: fakeFields.length },
+    { label: 'Vuelos (semana)', value: fakeFlights.length },
+    { label: 'Evidencia (semana)', value: fakeEvidence.length },
+    { label: 'Operadores activos', value: fakeOperators.length },
   ];
 
-  const recentFlights = [
-    {
-      id: 1,
-      field: 'Campo Principal - Agricola del Valle',
-      operator: 'Juan Pérez',
-      startTime: '2024-01-15T20:00:00',
-      status: 'ACTIVE',
-      duration: '2h 15m'
-    },
-    {
-      id: 2,
-      field: 'Campo Norte - Viña Santa Rita',
-      operator: 'María González',
-      startTime: '2024-01-15T18:30:00',
-      status: 'COMPLETED',
-      duration: '1h 45m'
-    },
-    {
-      id: 3,
-      field: 'Campo Sur - Fundo Los Olivos',
-      operator: 'Carlos Rodríguez',
-      startTime: '2024-01-15T16:00:00',
-      status: 'COMPLETED',
-      duration: '2h 30m'
-    }
-  ];
-
-  const recentEvidence = [
-    {
-      id: 1,
-      title: 'Intrusión detectada en perímetro norte',
-      type: 'ALERT',
-      priority: 'HIGH',
-      field: 'Campo Principal',
-      time: '2024-01-15T21:15:00'
-    },
-    {
-      id: 2,
-      title: 'Anomalía térmica en sector 3',
-      type: 'IMAGE',
-      priority: 'MEDIUM',
-      field: 'Campo Norte',
-      time: '2024-01-15T19:45:00'
-    },
-    {
-      id: 3,
-      title: 'Reporte de patrullaje rutinario',
-      type: 'TEXT',
-      priority: 'LOW',
-      field: 'Campo Sur',
-      time: '2024-01-15T18:30:00'
-    }
-  ];
+  // Últimos vuelos
+  const lastFlights = fakeFlights.slice(0, 5);
+  // Última evidencia
+  const lastEvidence = fakeEvidence.slice(0, 5);
+  // Campos sin vuelos recientes (simulado: >2 días sin vuelo)
+  const camposSinVuelos = fakeFields.filter(f => {
+    const last = new Date(f.lastFlight);
+    const now = new Date('2024-06-24');
+    return (now - last) / (1000 * 60 * 60 * 24) > 2;
+  });
 
   const getStatusBadge = (status) => {
     const statusConfig = {
@@ -134,123 +109,149 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header del Dashboard */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 font-display">
-          Dashboard
-        </h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Bienvenido de vuelta, {user?.firstName}. Aquí tienes un resumen de las operaciones.
-        </p>
-      </div>
-
-      {/* Estadísticas */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <div key={stat.name} className="card">
-            <div className="flex items-center">
-              <div className={`flex-shrink-0 p-3 rounded-lg ${stat.color}`}>
-                <stat.icon className="h-6 w-6 text-white" />
-              </div>
-              <div className="ml-4 flex-1">
-                <p className="text-sm font-medium text-gray-600">{stat.name}</p>
-                <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="flex items-center">
-                <span className={`text-sm font-medium ${
-                  stat.changeType === 'positive' ? 'text-green-600' : 
-                  stat.changeType === 'negative' ? 'text-red-600' : 'text-gray-600'
-                }`}>
-                  {stat.change}
-                </span>
-                <span className="text-sm text-gray-500 ml-1">vs mes anterior</span>
-              </div>
-            </div>
+    <div className="space-y-8">
+      {/* KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+        {kpis.map(kpi => (
+          <div key={kpi.label} className="bg-white rounded-xl shadow p-6 flex flex-col items-center">
+            <div className="text-3xl font-bold text-primary-700 mb-1">{kpi.value}</div>
+            <div className="text-gray-600 text-sm font-semibold">{kpi.label}</div>
           </div>
         ))}
       </div>
 
-      {/* Contenido principal */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Vuelos Recientes */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Vuelos Recientes</h2>
-            <button className="text-sm text-primary-600 hover:text-primary-700 font-medium">
-              Ver todos
-            </button>
-          </div>
-          <div className="space-y-4">
-            {recentFlights.map((flight) => (
-              <div key={flight.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{flight.field}</p>
-                  <p className="text-xs text-gray-500">Operador: {flight.operator}</p>
-                  <p className="text-xs text-gray-500">
-                    Inicio: {formatTime(flight.startTime)} • Duración: {flight.duration}
-                  </p>
-                </div>
-                <div className="ml-4">
-                  {getStatusBadge(flight.status)}
-                </div>
+      {/* Gráfica de vuelos y distribución de evidencia */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Gráfica de vuelos */}
+        <div className="bg-white rounded-xl shadow p-6 col-span-2">
+          <div className="font-bold text-lg mb-2">Vuelos por día (semana)</div>
+          <div className="flex items-end h-40 gap-4">
+            {flightsByDay.map(d => (
+              <div key={d.day} className="flex flex-col items-center flex-1">
+                <div className="w-8 bg-primary-500 rounded-t transition-all" style={{ height: `${d.count * 30 + 8}px` }}></div>
+                <div className="text-xs mt-2 text-gray-500">{d.day}</div>
+                <div className="text-xs text-gray-700 font-bold">{d.count}</div>
               </div>
             ))}
           </div>
         </div>
-
-        {/* Evidencia Reciente */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Evidencia Reciente</h2>
-            <button className="text-sm text-primary-600 hover:text-primary-700 font-medium">
-              Ver todas
-            </button>
+        {/* Distribución de evidencia */}
+        <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center justify-center">
+          <div className="font-bold text-lg mb-4">Evidencia por tipo</div>
+          <div className="w-32 h-32 relative flex items-center justify-center">
+            {/* Pie chart fake */}
+            <svg viewBox="0 0 32 32" className="w-full h-full">
+              <circle r="16" cx="16" cy="16" fill="#e5e7eb" />
+              <circle r="16" cx="16" cy="16" fill="none" stroke="#3b82f6" strokeWidth="32" strokeDasharray="66 34" strokeDashoffset="0" />
+              <circle r="16" cx="16" cy="16" fill="none" stroke="#f472b6" strokeWidth="32" strokeDasharray="34 66" strokeDashoffset="66" />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div className="text-2xl font-bold">{fakeEvidence.length}</div>
+              <div className="text-xs text-gray-500">Total</div>
+            </div>
           </div>
-          <div className="space-y-4">
-            {recentEvidence.map((evidence) => (
-              <div key={evidence.id} className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
-                <div className="flex-shrink-0 mt-1">
-                  {getPriorityIcon(evidence.priority)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900">{evidence.title}</p>
-                  <p className="text-xs text-gray-500">{evidence.field}</p>
-                  <p className="text-xs text-gray-500">{formatTime(evidence.time)}</p>
-                </div>
-                <div className="flex-shrink-0">
-                  <span className={`priority-${evidence.priority.toLowerCase()}`}>
-                    {evidence.priority}
-                  </span>
-                </div>
-              </div>
-            ))}
+          <div className="flex gap-4 mt-4">
+            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-blue-500 inline-block"></span>Foto</div>
+            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-pink-400 inline-block"></span>Video</div>
           </div>
         </div>
       </div>
 
-      {/* Acciones Rápidas */}
-      <div className="card">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Acciones Rápidas</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors">
-            <Plane className="h-6 w-6 text-gray-400 mr-2" />
-            <span className="text-sm font-medium text-gray-700">Nuevo Vuelo</span>
-          </button>
-          <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors">
-            <FileText className="h-6 w-6 text-gray-400 mr-2" />
-            <span className="text-sm font-medium text-gray-700">Registrar Evidencia</span>
-          </button>
-          <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors">
-            <MapPin className="h-6 w-6 text-gray-400 mr-2" />
-            <span className="text-sm font-medium text-gray-700">Ver Campos</span>
-          </button>
-          <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors">
-            <TrendingUp className="h-6 w-6 text-gray-400 mr-2" />
-            <span className="text-sm font-medium text-gray-700">Reportes</span>
-          </button>
+      {/* Mapa simulado y ranking operadores */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Mapa simulado */}
+        <div className="bg-white rounded-xl shadow p-6 col-span-2">
+          <div className="font-bold text-lg mb-2">Mapa de campos monitoreados</div>
+          <div className="w-full h-56 bg-gradient-to-br from-green-100 to-blue-100 rounded-lg flex items-center justify-center relative">
+            {/* Simulación de campos como puntos */}
+            {fakeFields.map((f, i) => (
+              <div key={f.id} className="absolute" style={{ left: `${30 + i * 40}%`, top: `${40 + i * 10}%` }}>
+                <div className="w-6 h-6 bg-green-500 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-xs text-white font-bold">
+                  {i + 1}
+                </div>
+                <div className="text-xs text-gray-700 mt-1 text-center whitespace-nowrap">{f.name}</div>
+              </div>
+            ))}
+            <span className="text-gray-400">(Mapa ilustrativo)</span>
+          </div>
+        </div>
+        {/* Ranking operadores */}
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="font-bold text-lg mb-4">Ranking de operadores</div>
+          <ol className="space-y-2">
+            {fakeOperators.sort((a, b) => b.flights - a.flights).map((op, idx) => (
+              <li key={op.id} className="flex items-center gap-3">
+                <span className="text-lg font-bold text-primary-700">#{idx + 1}</span>
+                <span className="font-semibold">{op.name}</span>
+                <span className="ml-auto text-gray-500">{op.flights} vuelos</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+
+      {/* Listados rápidos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Últimos vuelos */}
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="font-bold text-lg mb-4">Últimos vuelos</div>
+          <ul className="divide-y">
+            {lastFlights.map(f => (
+              <li key={f.id} className="py-2 flex items-center gap-3">
+                <span className="font-semibold text-primary-700">{fakeFields.find(field => field.id === f.fieldId)?.name}</span>
+                <span className="text-gray-500 text-sm">{f.operator}</span>
+                <span className="ml-auto text-xs text-gray-400">{new Date(f.startTime).toLocaleDateString('es-CL')}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        {/* Última evidencia */}
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="font-bold text-lg mb-4">Última evidencia</div>
+          <ul className="divide-y">
+            {lastEvidence.map(ev => (
+              <li key={ev.id} className="py-2 flex items-center gap-3">
+                <span className="font-semibold text-pink-600">{ev.type}</span>
+                <span className="text-gray-700">{ev.description}</span>
+                <span className="ml-auto text-xs text-gray-400">{ev.date}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Campos sin vuelos recientes y alertas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Campos sin vuelos recientes */}
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="font-bold text-lg mb-4">Campos sin vuelos recientes</div>
+          {camposSinVuelos.length === 0 ? (
+            <div className="text-gray-400">Todos los campos tienen vuelos recientes.</div>
+          ) : (
+            <ul className="list-disc ml-6 text-gray-700">
+              {camposSinVuelos.map(f => (
+                <li key={f.id}>{f.name} ({f.location})</li>
+              ))}
+            </ul>
+          )}
+        </div>
+        {/* Alertas */}
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="font-bold text-lg mb-4">Alertas recientes</div>
+          {fakeAlerts.length === 0 ? (
+            <div className="text-gray-400">Sin alertas abiertas.</div>
+          ) : (
+            <ul className="divide-y">
+              {fakeAlerts.map(alert => (
+                <li key={alert.id} className="py-2 flex items-center gap-3">
+                  <span className="font-semibold text-red-600">{alert.type}</span>
+                  <span className="text-gray-700">{alert.field}</span>
+                  <span className="ml-auto text-xs text-gray-400">{alert.date}</span>
+                  <span className="ml-2 text-xs bg-red-100 text-red-700 px-2 py-1 rounded">{alert.status}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>
